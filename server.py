@@ -6,8 +6,10 @@ from urllib.parse import parse_qs, urlparse
 
 from generator import generate_graph
 from graph import Graph
+from max_flow import edmonds_karp, find_bottlenecks
 from mst import kruskal_mst
 from shortest_path import dijkstra, reconstruct_path
+from vulnerability import find_bridges_and_articulation_points
 
 
 class GraphApiHandler(BaseHTTPRequestHandler):
@@ -27,9 +29,15 @@ class GraphApiHandler(BaseHTTPRequestHandler):
             return bool(value)
         raise ValueError("Invalid boolean value for 'use_mst'")
 
+    def _set_cors_headers(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+
     def _send_json(self, status_code, payload):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status_code)
+        self._set_cors_headers()
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
@@ -47,6 +55,11 @@ class GraphApiHandler(BaseHTTPRequestHandler):
         if graph_payload is None:
             graph_payload = body
         return Graph.from_dict(graph_payload)
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self._set_cors_headers()
+        self.end_headers()
 
     def do_GET(self):
         parsed = urlparse(self.path)
@@ -74,6 +87,42 @@ class GraphApiHandler(BaseHTTPRequestHandler):
         except Exception:
             self._send_json(400, {"error": "Invalid JSON"})
             return
+
+        if parsed.path == "/max-flow":
+            try:
+                graph = self._parse_graph_payload(body)
+
+                nodes = list(graph.nodes.keys())
+                source = random.choice(nodes)
+
+                # допустим 3 случайных жилых модуля
+                sinks = set(random.sample(nodes, min(3, len(nodes))))
+                sinks.discard(source)
+
+                flow, residual = edmonds_karp(graph, source, sinks)
+                bottlenecks = find_bottlenecks(graph, residual)
+
+                self._send_json(200, {
+                    "source": source,
+                    "sinks": list(sinks),
+                    "max_flow": flow,
+                    "bottlenecks": bottlenecks
+                })
+            except Exception as exc:
+                self._send_json(400, {"error": str(exc)})
+
+        if parsed.path == "/vulnerability":
+            try:
+                graph = self._parse_graph_payload(body)
+
+                bridges, points = find_bridges_and_articulation_points(graph)
+
+                self._send_json(200, {
+                    "bridges": bridges,
+                    "articulation_points": points
+                })
+            except Exception as exc:
+                self._send_json(400, {"error": str(exc)})
 
         if parsed.path == "/mst":
             try:
@@ -136,7 +185,7 @@ class GraphApiHandler(BaseHTTPRequestHandler):
                 goal = int(body["goal"])
 
                 mst = body.get("mst")
-                
+
                 dist, prev = dijkstra(start, mst)
                 path = reconstruct_path(prev, start, goal)
 

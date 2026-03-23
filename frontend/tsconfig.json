@@ -1,0 +1,10 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"lib": ["ESNext", "DOM"],
+		"outDir": "./dist",
+		"rootDir": "./",
+		"strict": true
+	},
+}
