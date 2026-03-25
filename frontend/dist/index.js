@@ -1,4 +1,4 @@
-import { getGraph, computeMST, computeVulnerability, computeFlow, removeNode, } from "./api.js";
+import { getGraph, computeMST, computeVulnerability, computeFlow, removeNode, removeEdge, } from "./api.js";
 import { draw } from "./renderer.js";
 let graph;
 let mst = null;
@@ -10,6 +10,21 @@ const stats = document.getElementById("stats");
 const init = async () => {
     graph = await getGraph();
     await recompute();
+};
+const distanceToSegment = (px, py, x1, y1, x2, y2) => {
+    const A = px - x1;
+    const B = py - y1;
+    const C = x2 - x1;
+    const D = y2 - y1;
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    let t = dot / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    const projX = x1 + t * C;
+    const projY = y1 + t * D;
+    const dx = px - projX;
+    const dy = py - projY;
+    return Math.sqrt(dx * dx + dy * dy);
 };
 const recompute = async () => {
     mst = await computeMST(graph);
@@ -62,6 +77,7 @@ canvas.addEventListener("click", async (e) => {
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) / 800;
     const y = (e.clientY - rect.top) / 800;
+    // 1. Сначала проверяем узлы (как было)
     let nearest = null;
     let minDist = 0.03;
     graph.nodes.forEach((n) => {
@@ -75,6 +91,23 @@ canvas.addEventListener("click", async (e) => {
     });
     if (nearest !== null) {
         graph = await removeNode(graph, nearest);
+        await recompute();
+        return;
+    }
+    // 2. Теперь проверяем рёбра
+    let edgeToRemove = null;
+    let edgeDist = 0.02; // чувствительность
+    for (const e of graph.edges) {
+        const u = graph.nodes.find((n) => n.id === e.u);
+        const v = graph.nodes.find((n) => n.id === e.v);
+        const dist = distanceToSegment(x, y, u.x, u.y, v.x, v.y);
+        if (dist < edgeDist) {
+            edgeToRemove = { u: e.u, v: e.v };
+            edgeDist = dist;
+        }
+    }
+    if (edgeToRemove) {
+        graph = await removeEdge(graph, edgeToRemove.u, edgeToRemove.v);
         await recompute();
     }
 });

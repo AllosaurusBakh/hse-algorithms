@@ -36,3 +36,11 @@ export const removeNode = async (graph, node_id) => {
     });
     return (await res.json()).graph;
 };
+export const removeEdge = async (graph, u, v) => {
+    const res = await fetch(`${API}/graph/remove-edge`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ graph, u, v }),
+    });
+    return (await res.json()).graph;
+};

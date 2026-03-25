@@ -4,6 +4,7 @@ import {
 	computeVulnerability,
 	computeFlow,
 	removeNode,
+	removeEdge,
 } from "./api";
 import { draw } from "./renderer";
 import type { Graph, TVulnerabilityData, TFlowData } from "./types.ts";
@@ -20,6 +21,34 @@ const stats = document.getElementById("stats");
 const init = async (): Promise<void> => {
 	graph = await getGraph();
 	await recompute();
+};
+
+const distanceToSegment = (
+	px: number,
+	py: number,
+	x1: number,
+	y1: number,
+	x2: number,
+	y2: number,
+): number => {
+	const A = px - x1;
+	const B = py - y1;
+	const C = x2 - x1;
+	const D = y2 - y1;
+
+	const dot = A * C + B * D;
+	const lenSq = C * C + D * D;
+
+	let t = dot / lenSq;
+	t = Math.max(0, Math.min(1, t));
+
+	const projX = x1 + t * C;
+	const projY = y1 + t * D;
+
+	const dx = px - projX;
+	const dy = py - projY;
+
+	return Math.sqrt(dx * dx + dy * dy);
 };
 
 const recompute = async (): Promise<void> => {
@@ -43,7 +72,7 @@ const recompute = async (): Promise<void> => {
 				stats.innerHTML += `<br/>Бутылочные горла: нет`;
 			}
 		}
-		
+
 		if (vul) {
 			if (flow.bottlenecks.length > 0) {
 				const list = vul.bridges
@@ -54,7 +83,7 @@ const recompute = async (): Promise<void> => {
 			} else {
 				stats.innerHTML += `<br/>Мосты: нет`;
 			}
-			
+
 			if (vul.articulation_points.length > 0) {
 				const list = vul.articulation_points
 					.map((u) => `(${u})`)
@@ -81,6 +110,7 @@ canvas.addEventListener("click", async (e) => {
 	const x = (e.clientX - rect.left) / 800;
 	const y = (e.clientY - rect.top) / 800;
 
+	// 1. Сначала проверяем узлы (как было)
 	let nearest: number | null = null;
 	let minDist = 0.03;
 
@@ -97,6 +127,28 @@ canvas.addEventListener("click", async (e) => {
 
 	if (nearest !== null) {
 		graph = await removeNode(graph, nearest);
+		await recompute();
+		return;
+	}
+
+	// 2. Теперь проверяем рёбра
+	let edgeToRemove: { u: number; v: number } | null = null;
+	let edgeDist = 0.02; // чувствительность
+
+	for (const e of graph.edges) {
+		const u = graph.nodes.find((n) => n.id === e.u)!;
+		const v = graph.nodes.find((n) => n.id === e.v)!;
+
+		const dist = distanceToSegment(x, y, u.x, u.y, v.x, v.y);
+
+		if (dist < edgeDist) {
+			edgeToRemove = { u: e.u, v: e.v };
+			edgeDist = dist;
+		}
+	}
+
+	if (edgeToRemove) {
+		graph = await removeEdge(graph, edgeToRemove.u, edgeToRemove.v);
 		await recompute();
 	}
 });

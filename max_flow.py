@@ -14,7 +14,7 @@ def build_capacity_graph(graph):
 
 
 def edmonds_karp(graph, source, sinks):
-    # строим остаточную сеть (residual graph)
+    # строим остаточный граф (residual graph)
     capacity = build_capacity_graph(graph)
 
     # общий максимальный поток
@@ -78,7 +78,7 @@ def edmonds_karp(graph, source, sinks):
             path_flow = min(path_flow, capacity[parent[s]][s])
             s = parent[s]
 
-        # обновляем остаточную сеть
+        # обновляем остаточный граф
         v = sink
         while v != source:
             u = parent[v]
