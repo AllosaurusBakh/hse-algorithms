@@ -9,13 +9,28 @@
 		<div class="container">
 			<h1>🚀 Инфраструктура Марсианской Колонии 🚀</h1>
 
-			<button id="generateBtn">Сгенерировать инфраструктуру</button>
-
 			<div class="canvas-wrapper">
 				<canvas id="canvas" width="800" height="800"></canvas>
 			</div>
 			
-			<div id="stats" class="stats"></div>
+			<button id="generateBtn">Сгенерировать инфраструктуру</button>
+
+			<div
+				style="
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+					font-size: 18px;
+					text-align: center;
+				"
+			>
+				<p id="source"></p>
+				<p id="sink"></p>
+				<p id="max_flow"></p>
+				<p id="bottleneck"></p>
+				<p id="bridges"></p>
+				<p id="articulation_points"></p>
+			</div>
 		</div>
 
 		<script type="module" src="./dist/index.js"></script>

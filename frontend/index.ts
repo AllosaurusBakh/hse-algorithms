@@ -16,7 +16,13 @@ let flow: TFlowData | null = null;
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const button = document.getElementById("generateBtn");
-const stats = document.getElementById("stats");
+
+const sourceEl = document.getElementById("source");
+const sinkEl = document.getElementById("sink");
+const maxFlowEl = document.getElementById("max_flow");
+const bottleneckEl = document.getElementById("bottleneck");
+const bridgesEl = document.getElementById("bridges");
+const articulationEl = document.getElementById("articulation_points");
 
 const init = async (): Promise<void> => {
 	graph = await getGraph();
@@ -56,44 +62,33 @@ const recompute = async (): Promise<void> => {
 	vul = await computeVulnerability(graph);
 	flow = await computeFlow(graph);
 
-	if (stats) {
-		if (flow) {
-			stats.innerHTML = `Источник: ${flow.source}`;
-			stats.innerHTML += `<br/>Стоки: ${flow.sinks.join(", ")}`;
-			stats.innerHTML += `<br/>Максимальный поток: ${flow.max_flow} литров`;
+	if (flow) {
+		sourceEl!.textContent = `Источник: ${flow.source}`;
+		sinkEl!.textContent = `Стоки: ${flow.sinks.join(", ")}`;
+		maxFlowEl!.textContent = `Максимальный поток: ${flow.max_flow} литров`;
 
-			if (flow.bottlenecks.length > 0) {
-				const list = flow.bottlenecks
-					.map(([u, v]) => `(${u} → ${v})`)
-					.join(", ");
+		bottleneckEl!.textContent =
+			flow.bottlenecks.length > 0
+				? `Бутылочные горла: ${flow.bottlenecks
+						.map(([u, v]) => `(${u} → ${v})`)
+						.join(", ")}`
+				: "Бутылочные горла: нет";
+	}
 
-				stats.innerHTML += `<br/>Бутылочные горла: ${list}`;
-			} else {
-				stats.innerHTML += `<br/>Бутылочные горла: нет`;
-			}
-		}
+	if (vul) {
+		bridgesEl!.textContent =
+			vul.bridges.length > 0
+				? `Мосты: ${vul.bridges
+						.map(([u, v]) => `(${u} → ${v})`)
+						.join(", ")}`
+				: "Мосты: нет";
 
-		if (vul) {
-			if (flow.bottlenecks.length > 0) {
-				const list = vul.bridges
-					.map(([u, v]) => `(${u} → ${v})`)
-					.join(", ");
-
-				stats.innerHTML += `<br/>Мосты: ${list}`;
-			} else {
-				stats.innerHTML += `<br/>Мосты: нет`;
-			}
-
-			if (vul.articulation_points.length > 0) {
-				const list = vul.articulation_points
-					.map((u) => `(${u})`)
-					.join(", ");
-
-				stats.innerHTML += `<br/>Критические узлы: ${list}`;
-			} else {
-				stats.innerHTML += `<br/>Критические узлы: нет`;
-			}
-		}
+		articulationEl!.textContent =
+			vul.articulation_points.length > 0
+				? `Критические узлы: ${vul.articulation_points
+						.map((u) => `(${u})`)
+						.join(", ")}`
+				: "Критические узлы: нет";
 	}
 
 	draw(graph, mst, vul, flow);
@@ -124,7 +119,7 @@ canvas.addEventListener("click", async (e) => {
 			nearest = n.id;
 			minDist = dist;
 		}
-		
+
 		if (!mapNodes.has(n.id)) {
 			mapNodes.set(n.id, { x: n.x, y: n.y });
 		}
@@ -143,7 +138,7 @@ canvas.addEventListener("click", async (e) => {
 	for (const e of graph.edges) {
 		const u = mapNodes.get(e.u);
 		const v = mapNodes.get(e.v);
-		
+
 		if (!u || !v) {
 			continue;
 		}
