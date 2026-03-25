@@ -29,12 +29,26 @@ export const draw = (graph, mst, vul, flow) => {
             ctx.lineWidth = 4;
         }
         ctx.stroke();
+        // длинны ребер
+        const midX = ((u.x + v.x) / 2) * 800;
+        const midY = ((u.y + v.y) / 2) * 800;
+        ctx.fillStyle = "white";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(e.w.toString(), midX, midY);
     });
     // Узлы
     graph.nodes.forEach((n) => {
         ctx.beginPath();
         ctx.arc(n.x * 800, n.y * 800, 6, 0, Math.PI * 2);
         ctx.fillStyle = "white";
+        ctx.fillText(n.id.toString(), n.x * 800, n.y * 800 - 12);
+        if (flow?.source === n.id) {
+            ctx.fillStyle = "purple";
+        }
+        if (flow?.sinks.includes(n.id)) {
+            ctx.fillStyle = "orange";
+        }
         if (vul?.articulation_points.includes(n.id)) {
             ctx.fillStyle = "yellow";
         }

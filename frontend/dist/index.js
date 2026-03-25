@@ -6,6 +6,7 @@ let vul = null;
 let flow = null;
 const canvas = document.getElementById("canvas");
 const button = document.getElementById("generateBtn");
+const stats = document.getElementById("stats");
 const init = async () => {
     graph = await getGraph();
     await recompute();
@@ -14,6 +15,42 @@ const recompute = async () => {
     mst = await computeMST(graph);
     vul = await computeVulnerability(graph);
     flow = await computeFlow(graph);
+    if (stats) {
+        if (flow) {
+            stats.innerHTML = `Источник: ${flow.source}`;
+            stats.innerHTML += `<br/>Стоки: ${flow.sinks.join(", ")}`;
+            stats.innerHTML += `<br/>Максимальный поток: ${flow.max_flow} литров`;
+            if (flow.bottlenecks.length > 0) {
+                const list = flow.bottlenecks
+                    .map(([u, v]) => `(${u} → ${v})`)
+                    .join(", ");
+                stats.innerHTML += `<br/>Бутылочные горла: ${list}`;
+            }
+            else {
+                stats.innerHTML += `<br/>Бутылочные горла: нет`;
+            }
+        }
+        if (vul) {
+            if (flow.bottlenecks.length > 0) {
+                const list = vul.bridges
+                    .map(([u, v]) => `(${u} → ${v})`)
+                    .join(", ");
+                stats.innerHTML += `<br/>Мосты: ${list}`;
+            }
+            else {
+                stats.innerHTML += `<br/>Мосты: нет`;
+            }
+            if (vul.articulation_points.length > 0) {
+                const list = vul.articulation_points
+                    .map((u) => `(${u})`)
+                    .join(", ");
+                stats.innerHTML += `<br/>Критические узлы: ${list}`;
+            }
+            else {
+                stats.innerHTML += `<br/>Критические узлы: нет`;
+            }
+        }
+    }
     draw(graph, mst, vul, flow);
 };
 if (button) {
