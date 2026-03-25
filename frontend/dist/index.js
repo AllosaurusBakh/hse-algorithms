@@ -77,7 +77,8 @@ canvas.addEventListener("click", async (e) => {
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) / 800;
     const y = (e.clientY - rect.top) / 800;
-    // 1. Сначала проверяем узлы (как было)
+    const mapNodes = new Map();
+    // 1. Проверяем узлы
     let nearest = null;
     let minDist = 0.03;
     graph.nodes.forEach((n) => {
@@ -88,18 +89,24 @@ canvas.addEventListener("click", async (e) => {
             nearest = n.id;
             minDist = dist;
         }
+        if (!mapNodes.has(n.id)) {
+            mapNodes.set(n.id, { x: n.x, y: n.y });
+        }
     });
     if (nearest !== null) {
         graph = await removeNode(graph, nearest);
         await recompute();
         return;
     }
-    // 2. Теперь проверяем рёбра
+    // 2.Проверяем рёбра
     let edgeToRemove = null;
-    let edgeDist = 0.02; // чувствительность
+    let edgeDist = 0.02;
     for (const e of graph.edges) {
-        const u = graph.nodes.find((n) => n.id === e.u);
-        const v = graph.nodes.find((n) => n.id === e.v);
+        const u = mapNodes.get(e.u);
+        const v = mapNodes.get(e.v);
+        if (!u || !v) {
+            continue;
+        }
         const dist = distanceToSegment(x, y, u.x, u.y, v.x, v.y);
         if (dist < edgeDist) {
             edgeToRemove = { u: e.u, v: e.v };

@@ -109,6 +109,7 @@ canvas.addEventListener("click", async (e) => {
 	const rect = canvas.getBoundingClientRect();
 	const x = (e.clientX - rect.left) / 800;
 	const y = (e.clientY - rect.top) / 800;
+	const mapNodes = new Map<number, { x: number; y: number }>();
 
 	// 1. Проверяем узлы
 	let nearest: number | null = null;
@@ -123,6 +124,10 @@ canvas.addEventListener("click", async (e) => {
 			nearest = n.id;
 			minDist = dist;
 		}
+		
+		if (!mapNodes.has(n.id)) {
+			mapNodes.set(n.id, { x: n.x, y: n.y });
+		}
 	});
 
 	if (nearest !== null) {
@@ -136,8 +141,12 @@ canvas.addEventListener("click", async (e) => {
 	let edgeDist = 0.02;
 
 	for (const e of graph.edges) {
-		const u = graph.nodes.find((n) => n.id === e.u)!;
-		const v = graph.nodes.find((n) => n.id === e.v)!;
+		const u = mapNodes.get(e.u);
+		const v = mapNodes.get(e.v);
+		
+		if (!u || !v) {
+			continue;
+		}
 
 		const dist = distanceToSegment(x, y, u.x, u.y, v.x, v.y);
 
