@@ -110,7 +110,7 @@ canvas.addEventListener("click", async (e) => {
 	const x = (e.clientX - rect.left) / 800;
 	const y = (e.clientY - rect.top) / 800;
 
-	// 1. Сначала проверяем узлы (как было)
+	// 1. Проверяем узлы
 	let nearest: number | null = null;
 	let minDist = 0.03;
 
@@ -131,9 +131,9 @@ canvas.addEventListener("click", async (e) => {
 		return;
 	}
 
-	// 2. Теперь проверяем рёбра
+	// 2.Проверяем рёбра
 	let edgeToRemove: { u: number; v: number } | null = null;
-	let edgeDist = 0.02; // чувствительность
+	let edgeDist = 0.02;
 
 	for (const e of graph.edges) {
 		const u = graph.nodes.find((n) => n.id === e.u)!;
